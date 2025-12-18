@@ -118,7 +118,7 @@ Contains the custom exceptions of the service.
 1. Clone the repository  
 2. Install dependencies: `pip install -r requirements.txt`  
 3. Start the service with Uvicorn:  
-   - `uvicorn.service.api.app:app --reload`  
+   - `uvicorn service.api.app:app --reload`  
 4. Once the service is running, it will accept a JSON with the structure defined in `api/models/invoice.py` at the endpoint located in `api/app.py`.
 
 ## Example of the JSON Expected by the Endpoint
