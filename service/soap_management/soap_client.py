@@ -10,7 +10,7 @@ from zeep import Client
 from zeep.exceptions import Fault, TransportError
 
 from service.utils.logger import logger
-from service.utils.wsdl_manager import get_login_cms_wsdl, get_wsfe_wsdl
+from service.utils.wsdl_manager import get_wsaa_wsdl, get_wsfe_wsdl
 
 
 # Implement retries with tenacity only for these Exceptions.
@@ -24,7 +24,7 @@ def login_cms(b64_cms: str) -> Optional[str]:
 
     logger.info("Starting CMS login request to AFIP")
 
-    afip_wsdl = get_login_cms_wsdl()
+    afip_wsdl = get_wsaa_wsdl()
 
     try:
         client = Client(wsdl=afip_wsdl)
