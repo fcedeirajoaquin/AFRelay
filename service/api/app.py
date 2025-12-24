@@ -6,7 +6,8 @@ from service.controllers.readiness_health_controller import \
     readiness_health_check
 from service.controllers.request_invoice_controller import \
     request_invoice_controller
-from service.controllers.request_last_authorized_controller import get_last_authorized_info
+from service.controllers.request_last_authorized_controller import \
+    get_last_authorized_info
 from service.utils.convert_to_dict import convert_pydantic_model_to_dict
 from service.utils.logger import logger
 
