@@ -1,13 +1,12 @@
 import logging
 from builtins import ConnectionResetError
-from typing import Optional
 
-from requests.exceptions import (  # Zeep uses requests behind it.
-    ConnectionError, Timeout)
+import httpx
 from tenacity import (before_sleep_log, retry, retry_if_exception_type,
                       stop_after_attempt, wait_fixed)
-from zeep import Client
+from zeep import AsyncClient
 from zeep.exceptions import Fault, TransportError, XMLSyntaxError
+from zeep.transports import AsyncTransport
 
 from service.soap_client.format_error import build_error_response
 from service.soap_client.wsdl.wsdl_manager import get_wsaa_wsdl
@@ -17,28 +16,29 @@ afip_wsdl = get_wsaa_wsdl()
 
 # Implement retries with tenacity only for these Exceptions.
 @retry(
-        retry=retry_if_exception_type(( ConnectionResetError, ConnectionError, TransportError )),
+        retry=retry_if_exception_type(( ConnectionResetError, httpx.ConnectError, TransportError )),
         stop=stop_after_attempt(3),
         wait=wait_fixed(0.5),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
-def login_cms(b64_cms: str) -> dict:
+async def login_cms(b64_cms: str) -> dict:
 
     logger.info("Starting CMS login request to AFIP")
     METHOD = "loginCms"
+    httpx_client = httpx.AsyncClient(timeout=30.0)
+    transport = AsyncTransport(client=httpx_client)
 
     try:
-        client = Client(wsdl=afip_wsdl)
-        login_ticket_response = client.service.loginCms(b64_cms)
+        client = AsyncClient(wsdl=afip_wsdl, transport=transport)
+        login_ticket_response = await client.service.loginCms(b64_cms)
         logger.info("CMS login request to AFIP ended successfully.")
 
-        logger.debug(f"login_ticket_response: {login_ticket_response}")
         return {
                 "status" : "success",
                 "response" : login_ticket_response
                 }
     
-    except (ConnectionError, Timeout) as e:
+    except (httpx.ConnectError, httpx.TimeoutException) as e:
         return build_error_response(METHOD, "Network error", str(e))
     
     except TransportError as e:
@@ -58,3 +58,9 @@ def login_cms(b64_cms: str) -> dict:
     except Exception as e:
         logger.error(f"General exception in login_cms: {e}")
         return build_error_response(METHOD, "unknown", str(e))
+    
+    finally:
+        if client and client.transport:
+            await client.transport.aclose()
+        else:
+            await httpx_client.aclose()

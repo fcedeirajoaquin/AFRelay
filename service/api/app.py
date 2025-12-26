@@ -1,7 +1,11 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 
-from service.api.models.invoice import RootModel
-from service.api.models.last_authorized import CompInfo
+from service.api.models.invoice_authorization import RootModel
+from service.api.models.invoice_query import InvoiceBase, InvoiceQueryRequest
+from service.controllers.consult_invoice_controller import \
+    consult_specific_invoice
 from service.controllers.readiness_health_controller import \
     readiness_health_check
 from service.controllers.request_invoice_controller import \
@@ -10,29 +14,54 @@ from service.controllers.request_last_authorized_controller import \
     get_last_authorized_info
 from service.utils.convert_to_dict import convert_pydantic_model_to_dict
 from service.utils.logger import logger
+from service.utils.token_scheduler import start_scheduler, stop_scheduler
 
-app = FastAPI()
 
-@app.post("/wsfe/invoice")
-def generate_invoice(sale_data: RootModel) -> dict:
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    start_scheduler()
+    yield
+    stop_scheduler() 
+
+app = FastAPI(lifespan=lifespan)
+
+@app.post("/wsfe/invoices")
+async def generate_invoice(sale_data: RootModel) -> dict:
     
-    logger.info("Invoice generation request received. Parsing input data and calling controller.")
+    logger.info("Received request to generate invoice at /wsfe/invoices")
 
     sale_data = convert_pydantic_model_to_dict(sale_data)
-    invoice_result = request_invoice_controller(sale_data)
+    invoice_result = await request_invoice_controller(sale_data)
+
+    logger.info("Invoice generation completed successfully")
 
     return invoice_result
 
-@app.post("/wsfe/last_authorized")
-def last_authorized(comp_info: CompInfo) -> dict:
 
-    logger.info("Consulting from last authorized invoice info.")
+@app.post("/wsfe/invoices/last-authorized")
+async def last_authorized(comp_info: InvoiceBase) -> dict:
+
+    logger.info("Received request to fetch last authorized invoice at /wsfe/invoices/last-authorized")
 
     comp_info = convert_pydantic_model_to_dict(comp_info)
-    last_authorized_info = get_last_authorized_info(comp_info)
+    last_authorized_info = await get_last_authorized_info(comp_info)
+
+    logger.info("Last authorized invoice retrieved successfully")
 
     return last_authorized_info
 
+
+@app.post("/wsfe/invoices/query")
+async def consult_invoice(comp_info: InvoiceQueryRequest):
+
+    logger.info("Received request to query specific invoice at /wsfe/invoices/query")
+
+    comp_info = convert_pydantic_model_to_dict(comp_info)
+    result = await consult_specific_invoice(comp_info)
+
+    logger.info("Invoice query completed successfully")
+
+    return result
 
 # ===================
 # == HEALTH CHECKS ==
@@ -44,7 +73,7 @@ def liveness() -> dict:
     return {"health" : "OK"}
 
 @app.get("/health/readiness")
-def readiness() -> dict:
+async def readiness() -> dict:
 
-    status = readiness_health_check()
+    status = await readiness_health_check()
     return status

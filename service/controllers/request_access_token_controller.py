@@ -5,24 +5,19 @@ from service.xml_management.xml_builder import (
     build_login_ticket_request, parse_and_save_loginticketresponse, save_xml)
 
 
-def generate_token_from_scratch() -> None:
+async def generate_token() -> None:
+
+    logger.info("Generating a new access token...")
 
     root = build_login_ticket_request()
     save_xml(root, "loginTicketRequest.xml")
     sign_login_ticket_request()
     b64_cms = get_binary_cms()
-    login_ticket_response = login_cms(b64_cms)
+    login_ticket_response = await login_cms(b64_cms)
 
     if login_ticket_response["status"] == "success":
         parse_and_save_loginticketresponse(login_ticket_response["response"])
-        logger.info("Token generated.")
+        logger.info("Token generated successfully.")
+        return
 
-def generate_token_from_existing() -> None:
-
-    logger.info("Token still valid. Generating loginTicketResponse without signing or creating new loginTicketRequest.")
-    b64_cms = get_binary_cms()
-    login_ticket_response = login_cms(b64_cms)
-
-    if login_ticket_response["status"] == "success":
-        parse_and_save_loginticketresponse(login_ticket_response["response"])
-        logger.info("Token generated.")
+    logger.error("Failed to generate access token.")

@@ -1,12 +1,12 @@
 import logging
 from builtins import ConnectionResetError
 
-from requests.exceptions import (  # Zeep uses requests behind it.
-    ConnectionError, Timeout)
+import httpx
 from tenacity import (before_sleep_log, retry, retry_if_exception_type,
                       stop_after_attempt, wait_fixed)
-from zeep import Client
+from zeep import AsyncClient, Client
 from zeep.exceptions import Fault, TransportError, XMLSyntaxError
+from zeep.transports import AsyncTransport
 
 from service.soap_client.format_error import build_error_response
 from service.soap_client.wsdl.wsdl_manager import get_wsfe_wsdl
@@ -22,23 +22,24 @@ afip_wsdl = get_wsfe_wsdl()
         wait=wait_fixed(0.5),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
-def fecae_solicitar(full_built_invoice: dict) -> dict:
+async def fecae_solicitar(full_built_invoice: dict) -> dict:
 
     logger.info(f"Generating invoice...")
     METHOD = "FECAESolicitar"
+    httpx_client = httpx.AsyncClient(timeout=30.0)
+    transport = AsyncTransport(client=httpx_client)
 
     try:
-        client = Client(wsdl=afip_wsdl)
-        invoice_result = client.service.FECAESolicitar(full_built_invoice['Auth'], full_built_invoice['FeCAEReq'])
+        client = AsyncClient(wsdl=afip_wsdl, transport=transport)
+        invoice_result = await client.service.FECAESolicitar(full_built_invoice['Auth'], full_built_invoice['FeCAEReq'])
         
-        logger.debug(f"Response: {invoice_result}")
         invoice_result = convert_zeep_object_to_dict(invoice_result)
         return {
                 "status" : "success",
                 "response" : invoice_result
                 }
     
-    except (ConnectionError, Timeout):
+    except (httpx.ConnectError, httpx.TimeoutException):
         return build_error_response(METHOD, "Network error", str(e))
     
     except TransportError as e:
@@ -58,6 +59,12 @@ def fecae_solicitar(full_built_invoice: dict) -> dict:
     except Exception as e:
         logger.error(f"General exception in fecae_solicitar: {e}")
         return build_error_response(METHOD, "unknown", str(e))
+    
+    finally:
+        if client and client.transport:
+            await client.transport.aclose()
+        else:
+            await httpx_client.aclose()
 
 
 # Implement retries with tenacity only for these Exceptions.
@@ -67,14 +74,16 @@ def fecae_solicitar(full_built_invoice: dict) -> dict:
         wait=wait_fixed(0.5),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
-def fe_comp_ultimo_autorizado(auth: dict, ptovta: int, cbtetipo: int) -> dict:
+async def fe_comp_ultimo_autorizado(auth: dict, ptovta: int, cbtetipo: int) -> dict:
     
     logger.info(f"Consulting last authorized invoice...")
     METHOD = "FECompUltimoAutorizado"
+    httpx_client = httpx.AsyncClient(timeout=30.0)
+    transport = AsyncTransport(client=httpx_client)
 
     try:
-        client = Client(wsdl=afip_wsdl)
-        last_authorized_invoice = client.service.FECompUltimoAutorizado(auth, ptovta, cbtetipo)
+        client = AsyncClient(wsdl=afip_wsdl, transport=transport)
+        last_authorized_invoice = await client.service.FECompUltimoAutorizado(auth, ptovta, cbtetipo)
         logger.debug(f"Response: {last_authorized_invoice}")
 
         last_authorized_invoice = convert_zeep_object_to_dict(last_authorized_invoice)
@@ -83,7 +92,7 @@ def fe_comp_ultimo_autorizado(auth: dict, ptovta: int, cbtetipo: int) -> dict:
                 "response" : last_authorized_invoice
                 }
     
-    except (ConnectionError, Timeout):
+    except (httpx.ConnectError, httpx.TimeoutException):
         return build_error_response(METHOD, "Network error", str(e))
     
     except TransportError as e:
@@ -104,6 +113,12 @@ def fe_comp_ultimo_autorizado(auth: dict, ptovta: int, cbtetipo: int) -> dict:
         logger.error(f"General exception in fe_comp_ultimo_autorizado: {e}")
         return build_error_response(METHOD, "unknown", str(e))
     
+    finally:
+        if client and client.transport:
+            await client.transport.aclose()
+        else:
+            await httpx_client.aclose()
+    
 
 # Implement retries with tenacity only for these Exceptions.
 @retry(
@@ -112,23 +127,15 @@ def fe_comp_ultimo_autorizado(auth: dict, ptovta: int, cbtetipo: int) -> dict:
         wait=wait_fixed(0.5),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
-def fe_comp_consultar(auth: dict, 
-                    cbtetipo: int, 
-                    cbtenro: int, 
-                    ptovta: int) -> dict:
+async def fe_comp_consultar(auth: dict, fecomp_req: dict) -> dict:
         
-    logger.info(f"Consulting last authorized invoice...")
     METHOD = "FECompConsultar"
-
-    fecomp_req = {
-        'CbteTipo': cbtetipo,
-        'CbteNro': cbtenro,
-        'PtoVta': ptovta
-    }
+    httpx_client = httpx.AsyncClient(timeout=30.0)
+    transport = AsyncTransport(client=httpx_client)
 
     try:
-        client = Client(wsdl=afip_wsdl)
-        invoice_info = client.service.FECompConsultar(auth, fecomp_req)
+        client = AsyncClient(wsdl=afip_wsdl, transport=transport)
+        invoice_info = await client.service.FECompConsultar(auth, fecomp_req)
         logger.debug(f"Response: {invoice_info}")
 
         invoice_info = convert_zeep_object_to_dict(invoice_info)
@@ -137,7 +144,7 @@ def fe_comp_consultar(auth: dict,
                 "response" : invoice_info
                 }
     
-    except (ConnectionError, Timeout):
+    except (httpx.ConnectError, httpx.TimeoutException):
         return build_error_response(METHOD, "Network error", str(e))
     
     except TransportError as e:
@@ -157,21 +164,29 @@ def fe_comp_consultar(auth: dict,
     except Exception as e:
         logger.error(f"General exception in fe_comp_consultar: {e}")
         return build_error_response(METHOD, "unknown", str(e))
+    
+    finally:
+        if client and client.transport:
+            await client.transport.aclose()
+        else:
+            await httpx_client.aclose()
 
 
 # ===================
 # == HEALTH CHECK ===
 # ===================
 
-def wsfe_dummy():
+async def wsfe_dummy():
     """
     WSFE health cheack
     """
     logger.info(f"Consulting WSFE dummy method (health check)...")
+    httpx_client = httpx.AsyncClient(timeout=30.0)
+    transport = AsyncTransport(client=httpx_client)
 
     try:
-        client = Client(wsdl=afip_wsdl)
-        health_info = client.service.FEDummy()
+        client = AsyncClient(wsdl=afip_wsdl, transport=transport)
+        health_info = await client.service.FEDummy()
 
         return health_info
 
