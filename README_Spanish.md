@@ -66,7 +66,7 @@ Contiene el módulo que firma la solicitud del ticket de acceso utilizando los e
 ### `payload_builder/`
 Contiene el módulo que arma y manipula los diccionarios (`dict`) que necesita la librería Zeep para consumir los servicios SOAP.
 
-### `soap_management/`
+### `soap_client/`
 Maneja la comunicación con los servicios SOAP de AFIP/ARCA y analiza las respuestas en busca de errores. Los errores suelen presentarse como un array al final de la respuesta.
 
 ### `time/`

@@ -66,7 +66,7 @@ Contains the module that signs the access ticket request using the elements from
 ### `payload_builder/`
 Contains the module that builds and manipulates the dictionaries (`dict`) required by the Zeep library to consume SOAP services.
 
-### `soap_management/`
+### `soap_client/`
 Handles communication with AFIP/ARCA SOAP services and parses the responses looking for errors. Errors usually appear as an array at the end of the response.
 
 ### `time/`
