@@ -12,16 +12,22 @@ from service.controllers.request_invoice_controller import \
     request_invoice_controller
 from service.controllers.request_last_authorized_controller import \
     get_last_authorized_info
+from service.soap_client.async_client import WSFEClientManager
+from service.soap_client.wsdl.wsdl_manager import get_wsfe_wsdl
 from service.utils.convert_to_dict import convert_pydantic_model_to_dict
 from service.utils.logger import logger
 from service.utils.token_scheduler import start_scheduler, stop_scheduler
+
+afip_wsdl = get_wsfe_wsdl()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     start_scheduler()
+    manager = WSFEClientManager(afip_wsdl)
     yield
-    stop_scheduler() 
+    await manager.close()
+    stop_scheduler()
 
 app = FastAPI(lifespan=lifespan)
 
