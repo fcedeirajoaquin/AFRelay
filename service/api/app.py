@@ -58,7 +58,7 @@ async def last_authorized(comp_info: InvoiceBase) -> dict:
 
 
 @app.post("/wsfe/invoices/query")
-async def consult_invoice(comp_info: InvoiceQueryRequest):
+async def consult_invoice(comp_info: InvoiceQueryRequest) -> dict:
 
     logger.info("Received request to query specific invoice at /wsfe/invoices/query")
 
