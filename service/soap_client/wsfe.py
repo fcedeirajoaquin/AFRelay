@@ -18,7 +18,7 @@ afip_wsdl = get_wsfe_wsdl()
 
 # Implement retries with tenacity only for these Exceptions.
 @retry(
-        retry=retry_if_exception_type(( ConnectionResetError, ConnectionError, TransportError )),
+        retry=retry_if_exception_type(( ConnectionResetError, httpx.ConnectError, TransportError )),
         stop=stop_after_attempt(3),
         wait=wait_fixed(0.5),
         before_sleep=before_sleep_log(logger, logging.WARNING),
@@ -63,7 +63,7 @@ async def fecae_solicitar(full_built_invoice: dict) -> dict:
 
 # Implement retries with tenacity only for these Exceptions.
 @retry(
-        retry=retry_if_exception_type(( ConnectionResetError, ConnectionError, TransportError )),
+        retry=retry_if_exception_type(( ConnectionResetError, httpx.ConnectError, TransportError )),
         stop=stop_after_attempt(3),
         wait=wait_fixed(0.5),
         before_sleep=before_sleep_log(logger, logging.WARNING),
@@ -109,7 +109,7 @@ async def fe_comp_ultimo_autorizado(auth: dict, ptovta: int, cbtetipo: int) -> d
 
 # Implement retries with tenacity only for these Exceptions.
 @retry(
-        retry=retry_if_exception_type(( ConnectionResetError, ConnectionError, TransportError )),
+        retry=retry_if_exception_type(( ConnectionResetError, httpx.ConnectError, TransportError )),
         stop=stop_after_attempt(3),
         wait=wait_fixed(0.5),
         before_sleep=before_sleep_log(logger, logging.WARNING),
