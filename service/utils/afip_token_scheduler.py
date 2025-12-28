@@ -2,7 +2,8 @@ from datetime import datetime, timezone
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from service.controllers.request_access_token_controller import generate_afip_access_token
+from service.controllers.request_access_token_controller import \
+    generate_afip_access_token
 from service.utils.logger import logger
 from service.xml_management.xml_builder import is_expired, xml_exists
 
