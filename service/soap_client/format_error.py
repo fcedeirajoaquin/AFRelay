@@ -1,5 +1,5 @@
 
-def build_error_response(error_type: str, method: str, details: str) -> dict:
+def build_error_response(method: str, error_type: str, details: str) -> dict:
     return {
         "status" : "error",
         "error" : {
