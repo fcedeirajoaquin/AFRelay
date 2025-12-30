@@ -3,6 +3,10 @@ service/certificates/*
 !service/certificates/.gitkeep
 !service/certificates/README.md
 
+/host_certs/*
+!host_certs/.gitkeep
+!host_certs/README.md
+
 # Ignore venv
 /venv
 
@@ -12,7 +16,7 @@ __pycache__/
 *.pyo
 *.pyd
 
-# Ignore XML files
+# Ignore all XML files
 *.xml
 
 # Ignore cms files
