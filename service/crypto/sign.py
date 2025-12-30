@@ -13,10 +13,10 @@ def sign_login_ticket_request() -> None:
     openssl_path = "C:\\Program Files\\OpenSSL-Win64\\bin\\openssl.exe" # example path
     windows_sign_command = [
         openssl_path, "cms", "-sign",
-        "-in", "service/xml_management/xml_files/loginTicketRequest.xml",
+        "-in", "service/xml_management/app_xml_files/loginTicketRequest.xml",
         "-out", "service/crypto/loginTicketRequest.xml.cms",
-        "-signer", "service/certificates/returned_certificate.pem",
-        "-inkey", "service/certificates/PrivateKey.key",
+        "-signer", "service/app_certs/returned_certificate.pem",
+        "-inkey", "service/app_certs/PrivateKey.key",
         "-nodetach",
         "-outform", "DER"
     ]
@@ -24,10 +24,10 @@ def sign_login_ticket_request() -> None:
     # Linux/Docker environments
     linux_sign_command = [ 
         "openssl", "cms", "-sign",
-        "-in", "service/xml_management/xml_files/loginTicketRequest.xml",
+        "-in", "service/xml_management/app_xml_files/loginTicketRequest.xml",
         "-out", "service/crypto/loginTicketRequest.xml.cms",
-        "-signer", "service/certificates/returned_certificate.pem",
-        "-inkey", "service/certificates/PrivateKey.key",
+        "-signer", "service/app_certs/returned_certificate.pem",
+        "-inkey", "service/app_certs/PrivateKey.key",
         "-nodetach",
         "-outform", "DER"
     ]
