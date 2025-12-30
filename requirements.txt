@@ -1,3 +1,12 @@
+# Requirements
+# ------------
+# Python 3.12 recommended; 3.14 has no pre-built wheels yet for
+# pydantic-core (Rust extension). If you use 3.14 you will need:
+#   - Rust toolchain (cargo + rustc)
+#   - C compiler
+#   - maturin (auto-installed if missing)
+# With 3.12 `pip install -r requirements.txt` works out of the box.
+
 lxml==5.4.0
 zeep==4.3.1
 fastapi==0.115.12
@@ -6,4 +15,4 @@ tenacity==9.1.2
 ntplib==0.4.0
 httpx==0.25.2
 apscheduler==3.11.2
-uvicorn[standard]
+uvicorn[standard]==0.40.0
