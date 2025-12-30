@@ -12,8 +12,8 @@ services:
       - DOCS_USERNAME=${DOCS_USERNAME:-admin}
       - DOCS_PASSWORD=${DOCS_PASSWORD:-admin}
     volumes:
-      - ./certs:/app/service/certificates:ro
-      - ./xml:/app/service/xml_management/xml_files
+      - ./host_certs:/app/service/app_certs:ro
+      - ./host_xml:/app/service/xml_management/app_xml_files
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health/liveness"]
       interval: 30s

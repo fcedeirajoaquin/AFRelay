@@ -21,8 +21,8 @@ COPY requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-RUN mkdir -p service/xml_management/xml_files \
-             service/certificates \
+RUN mkdir -p service/xml_management/app_xml_files \
+             service/app_certs \
              service/crypto \
     && chown -R appuser:appuser $APP_HOME
 
