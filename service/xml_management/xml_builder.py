@@ -5,6 +5,7 @@ from lxml import etree
 
 from service.time.time_management import generate_ntp_timestamp
 from service.utils.logger import logger
+from config.paths import get_afip_paths
 
 
 def build_login_ticket_request() -> "etree._Element":
@@ -41,9 +42,9 @@ def parse_and_save_loginticketresponse(login_ticket_response: str) -> None:
 
     save_xml(root, "loginTicketResponse.xml")
 
-def extract_token_and_sign_from_xml(xml_name: str) -> tuple[str, str]:
+def extract_token_and_sign_from_xml() -> tuple[str, str]:
 
-    path = f"service/xml_management/app_xml_files/{xml_name}"
+    path = get_afip_paths().login_response
     tree = etree.parse(path)
     root = tree.getroot()
 
@@ -63,7 +64,7 @@ def is_expired(xml_name: str) -> bool:
 
     actual_dt = datetime.strptime(str(actual_hour), "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
 
-    path = f"service/xml_management/app_xml_files/{xml_name}"
+    path = get_afip_paths().base_xml / xml_name
     tree = etree.parse(path)
     root = tree.getroot()
     expiration_time_label = root.find(".//expirationTime")
@@ -79,14 +80,14 @@ def is_expired(xml_name: str) -> bool:
 
 def save_xml(root, xml_name: str) -> None:
     
-    path = f"service/xml_management/app_xml_files/{xml_name}"
+    path = get_afip_paths().base_xml / xml_name
     os.makedirs(os.path.dirname(path), exist_ok=True)
     tree = etree.ElementTree(root)
     tree.write(path, pretty_print=True, xml_declaration=True, encoding="UTF-8")
     logger.info(f"{xml_name} successfully saved.")
 
 def xml_exists(xml_name: str) -> bool:
-    xml_path = f"service/xml_management/app_xml_files/{xml_name}"
+    xml_path = get_afip_paths().base_xml / xml_name
 
     if os.path.exists(xml_path):
         return True

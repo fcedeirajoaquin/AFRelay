@@ -2,9 +2,13 @@ import base64
 import subprocess
 
 from service.utils.logger import logger
+from config.paths import get_afip_paths
 
 
 def sign_login_ticket_request() -> None:
+
+    paths = get_afip_paths()
+
     logger.debug("Signing loginTicketRequest.xml...")
     # NOTE: Production and Docker environments use Linux.
     # Windows command is kept for local development only.
@@ -13,10 +17,10 @@ def sign_login_ticket_request() -> None:
     openssl_path = "C:\\Program Files\\OpenSSL-Win64\\bin\\openssl.exe" # example path
     windows_sign_command = [
         openssl_path, "cms", "-sign",
-        "-in", "service/xml_management/app_xml_files/loginTicketRequest.xml",
-        "-out", "service/crypto/loginTicketRequest.xml.cms",
-        "-signer", "service/app_certs/returned_certificate.pem",
-        "-inkey", "service/app_certs/PrivateKey.key",
+        "-in", str(paths.login_request),
+        "-out", str(paths.login_request_cms),
+        "-signer", str(paths.certificate),
+        "-inkey", str(paths.private_key),
         "-nodetach",
         "-outform", "DER"
     ]
@@ -24,10 +28,10 @@ def sign_login_ticket_request() -> None:
     # Linux/Docker environments
     linux_sign_command = [ 
         "openssl", "cms", "-sign",
-        "-in", "service/xml_management/app_xml_files/loginTicketRequest.xml",
-        "-out", "service/crypto/loginTicketRequest.xml.cms",
-        "-signer", "service/app_certs/returned_certificate.pem",
-        "-inkey", "service/app_certs/PrivateKey.key",
+        "-in", str(paths.login_request),
+        "-out", str(paths.login_request_cms),
+        "-signer", str(paths.certificate),
+        "-inkey", str(paths.private_key),
         "-nodetach",
         "-outform", "DER"
     ]
@@ -41,7 +45,7 @@ def sign_login_ticket_request() -> None:
         logger.debug("loginTicketRequest.xml successfully signed.")
 
 def get_binary_cms() -> str:
-    with open("service/crypto/loginTicketRequest.xml.cms", 'rb') as cms:
+    with open(str(get_afip_paths().login_request_cms), 'rb') as cms:
         cleaned_cms = cms.read()
 
     b64_cms = base64.b64encode(cleaned_cms).decode("ascii")
