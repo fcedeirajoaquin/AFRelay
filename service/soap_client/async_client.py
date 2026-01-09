@@ -21,6 +21,11 @@ class WSFEClientManager:
 
     def get_client(self): 
         return self.__class__._client
+    
+    @classmethod
+    def reset_singleton(cls):
+        cls._instance = None
+        cls._client = None
 
     async def close(self) -> None:
         if self.__class__._client:
