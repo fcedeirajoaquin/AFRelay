@@ -1,0 +1,22 @@
+from service.payload_builder.builder import add_auth_to_payload, build_auth
+
+
+def test_add_auth_to_payload():
+
+    fake_sale_data = { "Auth": {} }
+    fake_token = "fake_token"
+    fake_sign = "fake_sign"
+
+    fake_sale_data_with_auth = add_auth_to_payload(fake_sale_data, "fake_token", "fake_sign")
+
+    assert fake_sale_data_with_auth['Auth']['Token'] == fake_token
+    assert fake_sale_data_with_auth['Auth']['Sign'] == fake_sign
+
+
+def test_build_auth():
+
+    auth = build_auth("fake_token", "fake_sign", 30740253022)
+
+    assert auth["Token"] == "fake_token"
+    assert auth["Sign"] == "fake_sign"
+    assert auth["Cuit"] == 30740253022
