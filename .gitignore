@@ -17,8 +17,10 @@ __pycache__/
 *.pyd
 *pytest_cache
 
-# Ignore all XML files
-*.xml
+# Ignore critical XML files
+*host_xml/*
+!host_xml/.gitkeep
+!host_xml/README.md
 
 # Ignore cms files
 *.cms
