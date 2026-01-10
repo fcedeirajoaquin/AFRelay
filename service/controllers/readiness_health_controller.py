@@ -1,6 +1,7 @@
+from zeep.helpers import serialize_object
+
 from service.soap_client.wsfe import wsfe_dummy
 from service.time.time_management import request_ntp_for_readiness
-from service.utils.convert_to_dict import convert_zeep_object_to_dict
 from service.utils.logger import logger
 
 
@@ -23,7 +24,10 @@ async def readiness_health_check() -> dict:
 
     # Check WSFE 
     wsfe_health_info = await wsfe_dummy()
-    wsfe_health_info_parsed = convert_zeep_object_to_dict(wsfe_health_info)
+
+    # Zeep returns an object of type '<class 'zeep.objects.[service response]'>'.
+    # To work with the returned data, this object needs to be converted into a dictionary using serialize_object().
+    wsfe_health_info_parsed = serialize_object(wsfe_health_info)
     logger.debug("WSFE dummy check OK")
 
     logger.debug("Readiness health check finished")
