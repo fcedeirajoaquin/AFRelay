@@ -49,7 +49,7 @@ async def fecae_solicitar(full_built_invoice: dict) -> dict:
         # These errors are the caller's responsibility to handle.
         
         logger.debug(f"SOAP FAULT in fecae_solicitar: {e}")
-        return build_error_response(METHOD, "SoapFault", str(e))
+        return build_error_response(METHOD, "SOAPFault", str(e))
     
     except XMLSyntaxError as e:
         return build_error_response(METHOD, "Invalid AFIP response", str(e))
@@ -95,7 +95,7 @@ async def fe_comp_ultimo_autorizado(auth: dict, ptovta: int, cbtetipo: int) -> d
         # These errors are the caller's responsibility to handle.
         
         logger.debug(f"SOAP FAULT in fe_comp_ultimo_autorizado: {e}")
-        return build_error_response(METHOD, "SoapFault", str(e))
+        return build_error_response(METHOD, "SOAPFault", str(e))
     
     except XMLSyntaxError as e:
         return build_error_response(METHOD, "Invalid AFIP response", str(e))
@@ -140,7 +140,7 @@ async def fe_comp_consultar(auth: dict, fecomp_req: dict) -> dict:
         # These errors are the caller's responsibility to handle.
         
         logger.debug(f"SOAP FAULT in fe_comp_consultar: {e}")
-        return build_error_response(METHOD, "SoapFault", str(e))
+        return build_error_response(METHOD, "SOAPFault", str(e))
     
     except XMLSyntaxError as e:
         return build_error_response(METHOD, "Invalid AFIP response", str(e))

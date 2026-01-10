@@ -50,7 +50,7 @@ async def login_cms(b64_cms: str) -> dict:
         # These errors are the caller's responsibility to handle.
 
         logger.debug(f"SOAP FAULT in login_cms: {e}")
-        return build_error_response(METHOD, "SoapFault", str(e))
+        return build_error_response(METHOD, "SOAPFault", str(e))
     
     except XMLSyntaxError as e:
         return build_error_response(METHOD, "Invalid AFIP response", str(e))
