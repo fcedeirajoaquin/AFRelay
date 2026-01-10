@@ -8,7 +8,7 @@ from service.time.time_management import generate_ntp_timestamp
 from service.utils.logger import logger
 
 
-def build_login_ticket_request() -> "etree._Element":
+def build_login_ticket_request(time_provider) -> "etree._Element":
 
     root = etree.Element("loginTicketRequest")
     header = etree.SubElement(root, "header")
@@ -17,7 +17,7 @@ def build_login_ticket_request() -> "etree._Element":
     expiration_time_label = etree.SubElement(header, "expirationTime")
     service = etree.SubElement(root, "service")
 
-    actual_hour, generation_time, expiration_time = generate_ntp_timestamp()
+    actual_hour, generation_time, expiration_time = time_provider()
 
     unique_id.text = str(actual_hour)
     generation_time_label.text = str(generation_time)

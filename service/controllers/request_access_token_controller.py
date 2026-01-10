@@ -3,13 +3,14 @@ from service.soap_client.wsaa import login_cms
 from service.utils.logger import logger
 from service.xml_management.xml_builder import (
     build_login_ticket_request, parse_and_save_loginticketresponse, save_xml)
+from service.time.time_management import generate_ntp_timestamp
 
 
 async def generate_afip_access_token() -> None:
 
     logger.info("Generating a new access token...")
 
-    root = build_login_ticket_request()
+    root = build_login_ticket_request(generate_ntp_timestamp)
     save_xml(root, "loginTicketRequest.xml")
     sign_login_ticket_request()
     b64_cms = get_binary_cms()
