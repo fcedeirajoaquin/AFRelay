@@ -1,3 +1,4 @@
+import logging
 import os
 from pathlib import Path
 
@@ -10,8 +11,6 @@ from config.paths import AfipPaths
 from service.api.app import app
 from service.soap_client.async_client import WSFEClientManager
 from service.utils.jwt_validator import verify_token
-
-import logging
 
 # Zeep logs for debugging
 # logging.getLogger("zeep").setLevel(logging.DEBUG)
