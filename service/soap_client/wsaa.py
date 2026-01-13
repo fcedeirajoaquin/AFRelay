@@ -7,10 +7,8 @@ from tenacity import (before_sleep_log, retry, retry_if_exception_type,
 from zeep.exceptions import Fault, TransportError, XMLSyntaxError
 
 from service.soap_client.format_error import build_error_response
-from service.soap_client.wsdl.wsdl_manager import get_wsaa_wsdl
 from service.utils.logger import logger
 
-afip_wsdl = get_wsaa_wsdl()
 
 @retry(
         retry=retry_if_exception_type(( ConnectionResetError, httpx.ConnectError, TransportError )),
