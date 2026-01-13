@@ -1,6 +1,6 @@
 <p align="center">
-  <a href="https://codecov.io/github/NehuenLian/AFIP-API-middleware">
-    <img src="https://codecov.io/github/NehuenLian/AFIP-API-middleware/graph/badge.svg?token=20WL0URAGI" alt="codecov"/>
+  <a href="https://codecov.io/github/NehuenLian/AFRelay">
+    <img src="https://codecov.io/github/NehuenLian/AFRelay/graph/badge.svg?token=20WL0URAGI" alt="codecov"/>
   </a>
 </p>
 <p align="center">
