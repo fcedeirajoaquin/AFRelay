@@ -2,6 +2,7 @@ import os
 import secrets
 from contextlib import asynccontextmanager
 
+from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, status
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
@@ -9,20 +10,11 @@ from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from starlette.exceptions import HTTPException
 
-from service.api.models.invoice_authorization import RootModel
-from service.api.models.invoice_query import InvoiceBase, InvoiceQueryRequest
-from service.controllers.consult_invoice_controller import \
-    consult_specific_invoice
+from service.api import wsaa, wsfe
 from service.controllers.readiness_health_controller import \
     readiness_health_check
-from service.controllers.request_invoice_controller import \
-    request_invoice_controller
-from service.controllers.request_last_authorized_controller import \
-    get_last_authorized_info
 from service.utils.afip_token_scheduler import start_scheduler, stop_scheduler
-from service.utils.jwt_validator import verify_token
 from service.utils.logger import logger
-from dotenv import load_dotenv
 
 load_dotenv(override=False)
 
@@ -33,39 +25,8 @@ async def lifespan(app: FastAPI):
     stop_scheduler()
 
 app = FastAPI(lifespan=lifespan)
-
-@app.post("/wsfe/invoices")
-async def generate_invoice(sale_data: RootModel, jwt = Depends(verify_token)) -> dict:
-    
-    logger.info("Received request to generate invoice at /wsfe/invoices")
-
-    sale_data = sale_data.model_dump()
-    invoice_result = await request_invoice_controller(sale_data)
-
-    return invoice_result
-
-
-@app.post("/wsfe/invoices/last-authorized")
-async def last_authorized(comp_info: InvoiceBase, jwt = Depends(verify_token)) -> dict:
-
-    logger.info("Received request to fetch last authorized invoice at /wsfe/invoices/last-authorized")
-
-    comp_info = comp_info.model_dump()
-    last_authorized_info = await get_last_authorized_info(comp_info)
-
-    return last_authorized_info
-
-
-@app.post("/wsfe/invoices/query")
-async def consult_invoice(comp_info: InvoiceQueryRequest, jwt = Depends(verify_token)) -> dict:
-
-    logger.info("Received request to query specific invoice at /wsfe/invoices/query")
-
-    comp_info = comp_info.model_dump()
-    result = await consult_specific_invoice(comp_info)
-
-    return result
-
+app.include_router(wsaa.router)
+app.include_router(wsfe.router)
 
 # ===================
 # == HEALTH CHECKS ==
