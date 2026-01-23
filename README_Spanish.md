@@ -1,19 +1,5 @@
-<p align="center">
-  <a href="https://codecov.io/github/NehuenLian/AFRelay">
-    <img src="https://codecov.io/github/NehuenLian/AFRelay/graph/badge.svg?token=20WL0URAGI" alt="codecov"/>
-  </a>
-</p>
-<p align="center">
-  <a href="https://www.python.org/">
-    <img src="https://img.shields.io/badge/python-3.11-blue?logo=python&logoColor=white" alt="Python">
-  </a>
-  <a href="https://pypi.org/project/zeep/">
-    <img src="https://img.shields.io/badge/zeep-4.3.1-green" alt="zeep">
-  </a>
-  <a href="https://fastapi.tiangolo.com/">
-    <img src="https://img.shields.io/badge/fastapi-0.115.12-blueviolet" alt="FastAPI">
-  </a>
-</p>
+[![CI](https://github.com/NehuenLian/AFRelay/actions/workflows/tests.yml/badge.svg)](https://github.com/NehuenLian/AFRelay/actions/workflows/tests.yml)
+[![codecov](https://codecov.io/github/NehuenLian/AFRelay/graph/badge.svg?token=20WL0URAGI)](https://codecov.io/github/NehuenLian/AFRelay)
 
 # AFRelay: Microservicio de Facturación con Integración a la Agencia Tributaria Argentina
 
