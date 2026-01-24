@@ -35,3 +35,17 @@ def get_afip_paths() -> AfipPaths:
         base_crypto = Path("service/crypto"),
         base_certs = Path("service/app_certs"),
     )
+
+def get_as_bytes() -> tuple[bytes, bytes, bytes]:
+    paths = get_afip_paths()
+
+    with open(paths.login_request, 'rb') as file:
+        login_ticket_request_bytes = file.read()
+
+    with open(paths.private_key, 'rb') as file:
+        private_key_bytes = file.read()
+
+    with open(paths.certificate, 'rb') as file:
+        certificate_bytes = file.read()
+
+    return login_ticket_request_bytes, private_key_bytes, certificate_bytes
