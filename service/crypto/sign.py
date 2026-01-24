@@ -1,53 +1,38 @@
 import base64
-import subprocess
+
+from cryptography import x509
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.serialization import pkcs7
 
 from config.paths import get_afip_paths
 from service.utils.logger import logger
 
 
-def sign_login_ticket_request() -> None:
+def sign_login_ticket_request() -> str:
 
     paths = get_afip_paths()
-
     logger.debug("Signing loginTicketRequest.xml...")
-    # NOTE: Production and Docker environments use Linux.
-    # Windows command is kept for local development only.
 
-    # OpenSSL command for windows (ensure you have OpenSSL binaries installed)
-    openssl_path = "C:\\Program Files\\OpenSSL-Win64\\bin\\openssl.exe" # example path
-    windows_sign_command = [
-        openssl_path, "cms", "-sign",
-        "-in", str(paths.login_request),
-        "-out", str(paths.login_request_cms),
-        "-signer", str(paths.certificate),
-        "-inkey", str(paths.private_key),
-        "-nodetach",
-        "-outform", "DER"
-    ]
+    with open(paths.login_request, 'rb') as file:
+        login_ticket_request_bytes = file.read()
 
-    # Linux/Docker environments
-    linux_sign_command = [ 
-        "openssl", "cms", "-sign",
-        "-in", str(paths.login_request),
-        "-out", str(paths.login_request_cms),
-        "-signer", str(paths.certificate),
-        "-inkey", str(paths.private_key),
-        "-nodetach",
-        "-outform", "DER"
-    ]
-    
-    result_cms = subprocess.run(linux_sign_command, capture_output=True, text=True)
-    
-    if result_cms.returncode != 0:
-        logger.error(f"Error signing CMS: {result_cms.stderr}")
-        raise Exception("CMS signing failed.")
-    else:
-        logger.debug("loginTicketRequest.xml successfully signed.")
+    with open(paths.private_key, 'rb') as file:
+        private_key_bytes = file.read()
 
-def get_binary_cms() -> str:
-    with open(str(get_afip_paths().login_request_cms), 'rb') as cms:
-        cleaned_cms = cms.read()
+    with open(paths.certificate, 'rb') as file:
+        certificate_bytes = file.read()
 
-    b64_cms = base64.b64encode(cleaned_cms).decode("ascii")
+    private_key = serialization.load_pem_private_key(private_key_bytes, password=None)
+    certificate = x509.load_pem_x509_certificate(certificate_bytes)
+
+    cms_signature = (
+        pkcs7.PKCS7SignatureBuilder()
+        .set_data(login_ticket_request_bytes)
+        .add_signer(certificate, private_key, hashes.SHA256())
+        .sign(encoding=serialization.Encoding.DER, options=[])
+    )
+
+    b64_cms = base64.b64encode(cms_signature).decode("ascii")
+    logger.debug("loginTicketRequest.xml successfully signed.")
 
     return b64_cms
