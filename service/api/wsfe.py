@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 
-from service.api.models.invoice_authorization import RootModel
+from service.api.models.fecae_solicitar import RootModel
 from service.api.models.invoice_query import InvoiceBase, InvoiceQueryRequest
 from service.controllers.consult_invoice_controller import \
     consult_specific_invoice
