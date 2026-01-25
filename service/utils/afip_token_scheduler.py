@@ -19,7 +19,9 @@ async def run_job():
     
     if xml_exists("loginTicketResponse.xml"):
         if is_expired("loginTicketResponse.xml", time_provider):
-            token_generation_status = await generate_afip_access_token()           
+            token_generation_status = await generate_afip_access_token()
+        logger.info("Token not expired.")
+        token_generation_status = {"status" : "success"}        
         
     if not xml_exists("loginTicketResponse.xml"):
         token_generation_status = await generate_afip_access_token()      
