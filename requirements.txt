@@ -11,7 +11,7 @@
 lxml==5.4.0
 cryptography==46.0.3
 
-uvicorn[standard]==0.40.0
+gunicorn==24.1.1
 fastapi==0.115.12
 pydantic==2.11.5
 

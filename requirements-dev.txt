@@ -10,6 +10,8 @@
 
 -r requirements.txt
 
+uvicorn[standard]==0.40.0
+
 # Testing and tools
 pytest==9.0.2
 pytest-httpserver==1.1.3
