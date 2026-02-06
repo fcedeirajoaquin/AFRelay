@@ -23,7 +23,6 @@ async def consult_afip_wsfe(make_request, METHOD: str) -> dict:
         
     try:
         afip_response = await make_request()
-        logger.debug(f"Response: {afip_response}")
 
         # Zeep returns an object of type '<class 'zeep.objects.[service response]'>'.
         # To work with the returned data, this object needs to be converted into a dictionary using serialize_object().
