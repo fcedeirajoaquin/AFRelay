@@ -1,14 +1,13 @@
 from pydantic import BaseModel
 
 
-class InvoiceBase(BaseModel):
+class InvoiceBaseQuery(BaseModel):
     Cuit: int
     PtoVta: int
     CbteTipo: int
 
-
-class InvoiceQueryRequest(InvoiceBase):
+class FECompConsultar(InvoiceBaseQuery):
     CbteNro: int
 
-class LastAuthorizedInvoiceRequest(InvoiceBase):
+class FECompUltimoAutorizado(InvoiceBaseQuery):
     pass

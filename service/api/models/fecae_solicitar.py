@@ -105,6 +105,6 @@ class Auth(BaseModel):
     """
     Cuit: int
 
-class RootModel(BaseModel):
+class FECAESolicitar(BaseModel):
     Auth: Auth
     FeCAEReq: FeCAEReq
