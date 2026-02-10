@@ -32,7 +32,6 @@ async def generate_afip_access_token() -> dict:
                 await httpx_client.aclose()
 
     login_ticket_response = await consult_afip_wsaa(login_cms, "loginCms")
-    logger.info(f"login_ticket_response: {login_ticket_response}")
 
     if login_ticket_response["status"] == "success":
         parse_and_save_loginticketresponse(login_ticket_response["response"], save_xml)
