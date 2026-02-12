@@ -1,4 +1,3 @@
-from functools import lru_cache
 from pathlib import Path
 
 
@@ -15,29 +14,29 @@ class AfipPaths:
     @property
     def login_request(self) -> Path:
         return self.base_xml / "loginTicketRequest.xml"
-    
+
     @property
     def login_response(self) -> Path:
         return self.base_xml / "loginTicketResponse.xml"
-    
+
     @property
     def certificate(self) -> Path:
         return self.base_certs / "returned_certificate.pem"
-    
+
     @property
     def private_key(self) -> Path:
         return self.base_certs / "PrivateKey.key"
-    
-@lru_cache
-def get_afip_paths() -> AfipPaths:
+
+
+def get_afip_paths(cuit: str) -> AfipPaths:
     return AfipPaths(
-        base_xml = Path("service/xml_management/app_xml_files"),
+        base_xml = Path(f"service/xml_management/app_xml_files/{cuit}"),
         base_crypto = Path("service/crypto"),
-        base_certs = Path("service/app_certs"),
+        base_certs = Path(f"service/app_certs/{cuit}"),
     )
 
-def get_as_bytes() -> tuple[bytes, bytes, bytes]:
-    paths = get_afip_paths()
+def get_as_bytes(cuit: str) -> tuple[bytes, bytes, bytes]:
+    paths = get_afip_paths(cuit)
 
     with open(paths.login_request, 'rb') as file:
         login_ticket_request_bytes = file.read()

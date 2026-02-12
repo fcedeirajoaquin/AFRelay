@@ -33,13 +33,19 @@ router = APIRouter()
 afip_wsdl = get_wsfe_wsdl()
 
 
+def _extract_cuit(data: dict) -> str:
+    """Extract CUIT from the Auth.Cuit field in the request payload."""
+    return str(data["Auth"]["Cuit"])
+
+
 @router.post("/wsfe/FECAESolicitar")
 async def fecae_solicitar(data: FECAESolicitar, jwt = Depends(verify_token)) -> dict:
-    
+
     logger.info("Received request to generate invoice at /wsfe/FECAESolicitar")
 
     data = data.model_dump(by_alias=True, exclude_none=True)
-    token, sign = extract_token_and_sign_from_xml()
+    cuit = _extract_cuit(data)
+    token, sign = extract_token_and_sign_from_xml(cuit)
     data = add_auth_to_payload(data, token, sign)
 
     async def make_request():
@@ -55,14 +61,15 @@ async def fecae_solicitar(data: FECAESolicitar, jwt = Depends(verify_token)) -> 
 async def fecomp_totx_request(data: FECompTotXRequest, jwt = Depends(verify_token)) -> dict:
 
     data = data.model_dump(by_alias=True, exclude_none=True)
-    token, sign = extract_token_and_sign_from_xml()
+    cuit = _extract_cuit(data)
+    token, sign = extract_token_and_sign_from_xml(cuit)
     data = add_auth_to_payload(data, token, sign)
 
     async def make_request():
         manager = WSFEClientManager(afip_wsdl)
         client = manager.get_client()
         return await client.service.FECompTotXRequest(**data)
-    
+
     result = await consult_afip_wsfe(make_request, "FECompTotXRequest")
     return result
 
@@ -72,7 +79,8 @@ async def fe_comp_ultimo_autorizado(data: FECompUltimoAutorizado, jwt = Depends(
     logger.info("Received request to generate invoice at /wsfe/FECompUltimoAutorizado")
 
     data = data.model_dump(by_alias=True, exclude_none=True)
-    token, sign = extract_token_and_sign_from_xml()
+    cuit = _extract_cuit(data)
+    token, sign = extract_token_and_sign_from_xml(cuit)
     data = add_auth_to_payload(data, token, sign)
 
     async def make_request():
@@ -89,7 +97,8 @@ async def fe_comp_consultar(comp_info: FECompConsultar, jwt = Depends(verify_tok
     logger.info("Received request to query specific invoice at /wsfe/FECompConsultar")
 
     data = comp_info.model_dump(by_alias=True, exclude_none=True)
-    token, sign = extract_token_and_sign_from_xml()
+    cuit = _extract_cuit(data)
+    token, sign = extract_token_and_sign_from_xml(cuit)
     data = add_auth_to_payload(data, token, sign)
 
     async def make_request():
@@ -103,9 +112,10 @@ async def fe_comp_consultar(comp_info: FECompConsultar, jwt = Depends(verify_tok
 
 @router.post("/wsfe/FECAEARegInformativo")
 async def fecaea_reg_informativo(data: FECAEARegInformativo, jwt = Depends(verify_token)) -> dict:
-    
+
     data = data.model_dump(by_alias=True, exclude_none=True)
-    token, sign = extract_token_and_sign_from_xml()
+    cuit = _extract_cuit(data)
+    token, sign = extract_token_and_sign_from_xml(cuit)
     data = add_auth_to_payload(data, token, sign)
 
     async def make_request():
@@ -121,14 +131,15 @@ async def fecaea_reg_informativo(data: FECAEARegInformativo, jwt = Depends(verif
 async def fecaea_solicitar(data: FECAEASolicitar, jwt = Depends(verify_token)) -> dict:
 
     data = data.model_dump(by_alias=True, exclude_none=True)
-    token, sign = extract_token_and_sign_from_xml()
+    cuit = _extract_cuit(data)
+    token, sign = extract_token_and_sign_from_xml(cuit)
     data = add_auth_to_payload(data, token, sign)
 
     async def make_request():
         manager = WSFEClientManager(afip_wsdl)
         client = manager.get_client()
         return await client.service.FECAEASolicitar(**data)
-    
+
     result = await consult_afip_wsfe(make_request, "FECAEASolicitar")
     return result
 
@@ -137,14 +148,15 @@ async def fecaea_solicitar(data: FECAEASolicitar, jwt = Depends(verify_token)) -
 async def fecaea_sin_movimiento_consultar(data: FECAEASinMovimientoConsultar, jwt = Depends(verify_token)) -> dict:
 
     data = data.model_dump(by_alias=True, exclude_none=True)
-    token, sign = extract_token_and_sign_from_xml()
+    cuit = _extract_cuit(data)
+    token, sign = extract_token_and_sign_from_xml(cuit)
     data = add_auth_to_payload(data, token, sign)
 
     async def make_request():
         manager = WSFEClientManager(afip_wsdl)
         client = manager.get_client()
         return await client.service.FECAEASinMovimientoConsultar(**data)
-    
+
     result = await consult_afip_wsfe(make_request, "FECAEASinMovimientoConsultar")
     return result
 
@@ -153,14 +165,15 @@ async def fecaea_sin_movimiento_consultar(data: FECAEASinMovimientoConsultar, jw
 async def fecaea_sin_movimiento_informar(data: FECAEASinMovimientoInformar, jwt = Depends(verify_token)) -> dict:
 
     data = data.model_dump(by_alias=True, exclude_none=True)
-    token, sign = extract_token_and_sign_from_xml()
+    cuit = _extract_cuit(data)
+    token, sign = extract_token_and_sign_from_xml(cuit)
     data = add_auth_to_payload(data, token, sign)
 
     async def make_request():
         manager = WSFEClientManager(afip_wsdl)
         client = manager.get_client()
         return await client.service.FECAEASinMovimientoInformar(**data)
-    
+
     result = await consult_afip_wsfe(make_request, "FECAEASinMovimientoInformar")
     return result
 
@@ -169,14 +182,15 @@ async def fecaea_sin_movimiento_informar(data: FECAEASinMovimientoInformar, jwt 
 async def fecaea_consultar(data: FECAEAConsultar, jwt = Depends(verify_token)) -> dict:
 
     data = data.model_dump(by_alias=True, exclude_none=True)
-    token, sign = extract_token_and_sign_from_xml()
+    cuit = _extract_cuit(data)
+    token, sign = extract_token_and_sign_from_xml(cuit)
     data = add_auth_to_payload(data, token, sign)
 
     async def make_request():
         manager = WSFEClientManager(afip_wsdl)
         client = manager.get_client()
         return await client.service.FECAEAConsultar(**data)
-    
+
     result = await consult_afip_wsfe(make_request, "FECAEAConsultar")
     return result
 
@@ -185,14 +199,15 @@ async def fecaea_consultar(data: FECAEAConsultar, jwt = Depends(verify_token)) -
 async def fe_param_get_cotization(data: FEParamGetCotizacion, jwt = Depends(verify_token)) -> dict:
 
     data = data.model_dump(by_alias=True, exclude_none=True)
-    token, sign = extract_token_and_sign_from_xml()
+    cuit = _extract_cuit(data)
+    token, sign = extract_token_and_sign_from_xml(cuit)
     data = add_auth_to_payload(data, token, sign)
 
     async def make_request():
         manager = WSFEClientManager(afip_wsdl)
         client = manager.get_client()
         return await client.service.FEParamGetCotizacion(**data)
-    
+
     result = await consult_afip_wsfe(make_request, "FEParamGetCotizacion")
     return result
 
@@ -201,14 +216,15 @@ async def fe_param_get_cotization(data: FEParamGetCotizacion, jwt = Depends(veri
 async def fe_param_get_tipos_tributos(data: FEParamGetTiposTributos, jwt = Depends(verify_token)) -> dict:
 
     data = data.model_dump(by_alias=True, exclude_none=True)
-    token, sign = extract_token_and_sign_from_xml()
+    cuit = _extract_cuit(data)
+    token, sign = extract_token_and_sign_from_xml(cuit)
     data = add_auth_to_payload(data, token, sign)
 
     async def make_request():
         manager = WSFEClientManager(afip_wsdl)
         client = manager.get_client()
         return await client.service.FEParamGetTiposTributos(**data)
-    
+
     result = await consult_afip_wsfe(make_request, "FEParamGetTiposTributos")
     return result
 
@@ -217,14 +233,15 @@ async def fe_param_get_tipos_tributos(data: FEParamGetTiposTributos, jwt = Depen
 async def fe_param_get_tipos_monedas(data: FEParamGetTiposMonedas, jwt = Depends(verify_token)) -> dict:
 
     data = data.model_dump(by_alias=True, exclude_none=True)
-    token, sign = extract_token_and_sign_from_xml()
+    cuit = _extract_cuit(data)
+    token, sign = extract_token_and_sign_from_xml(cuit)
     data = add_auth_to_payload(data, token, sign)
 
     async def make_request():
         manager = WSFEClientManager(afip_wsdl)
         client = manager.get_client()
         return await client.service.FEParamGetTiposMonedas(**data)
-    
+
     result = await consult_afip_wsfe(make_request, "FEParamGetTiposMonedas")
     return result
 
@@ -233,14 +250,15 @@ async def fe_param_get_tipos_monedas(data: FEParamGetTiposMonedas, jwt = Depends
 async def fe_param_get_tipos_iva(data: FEParamGetTiposIva, jwt = Depends(verify_token)) -> dict:
 
     data = data.model_dump(by_alias=True, exclude_none=True)
-    token, sign = extract_token_and_sign_from_xml()
+    cuit = _extract_cuit(data)
+    token, sign = extract_token_and_sign_from_xml(cuit)
     data = add_auth_to_payload(data, token, sign)
 
     async def make_request():
         manager = WSFEClientManager(afip_wsdl)
         client = manager.get_client()
         return await client.service.FEParamGetTiposIva(**data)
-    
+
     result = await consult_afip_wsfe(make_request, "FEParamGetTiposIva")
     return result
 
@@ -249,14 +267,15 @@ async def fe_param_get_tipos_iva(data: FEParamGetTiposIva, jwt = Depends(verify_
 async def fe_param_get_tipos_opcional(data: FEParamGetTiposOpcional, jwt = Depends(verify_token)) -> dict:
 
     data = data.model_dump(by_alias=True, exclude_none=True)
-    token, sign = extract_token_and_sign_from_xml()
+    cuit = _extract_cuit(data)
+    token, sign = extract_token_and_sign_from_xml(cuit)
     data = add_auth_to_payload(data, token, sign)
 
     async def make_request():
         manager = WSFEClientManager(afip_wsdl)
         client = manager.get_client()
         return await client.service.FEParamGetTiposOpcional(**data)
-    
+
     result = await consult_afip_wsfe(make_request, "FEParamGetTiposOpcional")
     return result
 
@@ -265,14 +284,15 @@ async def fe_param_get_tipos_opcional(data: FEParamGetTiposOpcional, jwt = Depen
 async def fe_param_get_tipos_concepto(data: FEParamGetTiposConcepto, jwt = Depends(verify_token)) -> dict:
 
     data = data.model_dump(by_alias=True, exclude_none=True)
-    token, sign = extract_token_and_sign_from_xml()
+    cuit = _extract_cuit(data)
+    token, sign = extract_token_and_sign_from_xml(cuit)
     data = add_auth_to_payload(data, token, sign)
 
     async def make_request():
         manager = WSFEClientManager(afip_wsdl)
         client = manager.get_client()
         return await client.service.FEParamGetTiposConcepto(**data)
-    
+
     result = await consult_afip_wsfe(make_request, "FEParamGetTiposConcepto")
     return result
 
@@ -281,14 +301,15 @@ async def fe_param_get_tipos_concepto(data: FEParamGetTiposConcepto, jwt = Depen
 async def fe_param_get_ptos_venta(data: FEParamGetPtosVenta, jwt = Depends(verify_token)) -> dict:
 
     data = data.model_dump(by_alias=True, exclude_none=True)
-    token, sign = extract_token_and_sign_from_xml()
+    cuit = _extract_cuit(data)
+    token, sign = extract_token_and_sign_from_xml(cuit)
     data = add_auth_to_payload(data, token, sign)
 
     async def make_request():
         manager = WSFEClientManager(afip_wsdl)
         client = manager.get_client()
         return await client.service.FEParamGetPtosVenta(**data)
-    
+
     result = await consult_afip_wsfe(make_request, "FEParamGetPtosVenta")
     return result
 
@@ -297,14 +318,15 @@ async def fe_param_get_ptos_venta(data: FEParamGetPtosVenta, jwt = Depends(verif
 async def fe_param_get_tipos_cbte(data: FEParamGetTiposCbte, jwt = Depends(verify_token)) -> dict:
 
     data = data.model_dump(by_alias=True, exclude_none=True)
-    token, sign = extract_token_and_sign_from_xml()
+    cuit = _extract_cuit(data)
+    token, sign = extract_token_and_sign_from_xml(cuit)
     data = add_auth_to_payload(data, token, sign)
 
     async def make_request():
         manager = WSFEClientManager(afip_wsdl)
         client = manager.get_client()
         return await client.service.FEParamGetTiposCbte(**data)
-    
+
     result = await consult_afip_wsfe(make_request, "FEParamGetTiposCbte")
     return result
 
@@ -313,14 +335,15 @@ async def fe_param_get_tipos_cbte(data: FEParamGetTiposCbte, jwt = Depends(verif
 async def fe_param_get_condicion_iva_receptor(data: FEParamGetCondicionIvaReceptor, jwt = Depends(verify_token)) -> dict:
 
     data = data.model_dump(by_alias=True, exclude_none=True)
-    token, sign = extract_token_and_sign_from_xml()
+    cuit = _extract_cuit(data)
+    token, sign = extract_token_and_sign_from_xml(cuit)
     data = add_auth_to_payload(data, token, sign)
 
     async def make_request():
         manager = WSFEClientManager(afip_wsdl)
         client = manager.get_client()
         return await client.service.FEParamGetCondicionIvaReceptor(**data)
-    
+
     result = await consult_afip_wsfe(make_request, "FEParamGetCondicionIvaReceptor")
     return result
 
@@ -329,14 +352,15 @@ async def fe_param_get_condicion_iva_receptor(data: FEParamGetCondicionIvaRecept
 async def fe_param_get_tipos_doc(data: FEParamGetTiposDoc, jwt = Depends(verify_token)) -> dict:
 
     data = data.model_dump(by_alias=True, exclude_none=True)
-    token, sign = extract_token_and_sign_from_xml()
+    cuit = _extract_cuit(data)
+    token, sign = extract_token_and_sign_from_xml(cuit)
     data = add_auth_to_payload(data, token, sign)
 
     async def make_request():
         manager = WSFEClientManager(afip_wsdl)
         client = manager.get_client()
         return await client.service.FEParamGetTiposDoc(**data)
-    
+
     result = await consult_afip_wsfe(make_request, "FEParamGetTiposDoc")
     return result
 
@@ -345,14 +369,15 @@ async def fe_param_get_tipos_doc(data: FEParamGetTiposDoc, jwt = Depends(verify_
 async def fe_param_get_tipos_paises(data: FEParamGetTiposPaises, jwt = Depends(verify_token)) -> dict:
 
     data = data.model_dump(by_alias=True, exclude_none=True)
-    token, sign = extract_token_and_sign_from_xml()
+    cuit = _extract_cuit(data)
+    token, sign = extract_token_and_sign_from_xml(cuit)
     data = add_auth_to_payload(data, token, sign)
 
     async def make_request():
         manager = WSFEClientManager(afip_wsdl)
         client = manager.get_client()
         return await client.service.FEParamGetTiposPaises(**data)
-    
+
     result = await consult_afip_wsfe(make_request, "FEParamGetTiposPaises")
     return result
 
@@ -361,13 +386,14 @@ async def fe_param_get_tipos_paises(data: FEParamGetTiposPaises, jwt = Depends(v
 async def fe_param_get_actividades(data: FEParamGetActividades, jwt = Depends(verify_token)) -> dict:
 
     data = data.model_dump(by_alias=True, exclude_none=True)
-    token, sign = extract_token_and_sign_from_xml()
+    cuit = _extract_cuit(data)
+    token, sign = extract_token_and_sign_from_xml(cuit)
     data = add_auth_to_payload(data, token, sign)
 
     async def make_request():
         manager = WSFEClientManager(afip_wsdl)
         client = manager.get_client()
         return await client.service.FEParamGetActividades(**data)
-    
+
     result = await consult_afip_wsfe(make_request, "FEParamGetActividades")
     return result

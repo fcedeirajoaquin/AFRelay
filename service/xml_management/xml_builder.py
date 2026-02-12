@@ -25,7 +25,7 @@ def build_login_ticket_request(time_provider) -> "etree._Element":
 
     return root
 
-def parse_and_save_loginticketresponse(login_ticket_response: str, xml_saver) -> None:
+def parse_and_save_loginticketresponse(login_ticket_response: str, xml_saver, cuit: str) -> None:
 
     root = etree.fromstring(login_ticket_response.encode("utf-8"))
     header = etree.SubElement(root, "header")
@@ -39,11 +39,11 @@ def parse_and_save_loginticketresponse(login_ticket_response: str, xml_saver) ->
     token = etree.SubElement(credentials, "token")
     sign = etree.SubElement(credentials, "sign")
 
-    xml_saver(root, "loginTicketResponse.xml")
+    xml_saver(root, "loginTicketResponse.xml", cuit)
 
-def extract_token_and_sign_from_xml() -> tuple[str, str]:
+def extract_token_and_sign_from_xml(cuit: str) -> tuple[str, str]:
 
-    path = paths.get_afip_paths().login_response
+    path = paths.get_afip_paths(cuit).login_response
     tree = etree.parse(path)
     root = tree.getroot()
 
@@ -55,15 +55,15 @@ def extract_token_and_sign_from_xml() -> tuple[str, str]:
 
     return token, sign
 
-def is_expired(xml_name: str, time_provider) -> bool:
+def is_expired(xml_name: str, time_provider, cuit: str) -> bool:
 
-    logger.debug(f"Running is_expired() function for {xml_name}")
+    logger.debug(f"Running is_expired() function for {xml_name} (CUIT: {cuit})")
 
     _, actual_hour, _ = time_provider()
 
     actual_dt = datetime.strptime(str(actual_hour), "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
 
-    path = paths.get_afip_paths().base_xml / xml_name
+    path = paths.get_afip_paths(cuit).base_xml / xml_name
     tree = etree.parse(path)
     root = tree.getroot()
     expiration_time_label = root.find(".//expirationTime")
@@ -77,16 +77,16 @@ def is_expired(xml_name: str, time_provider) -> bool:
     else:
         return False
 
-def save_xml(root, xml_name: str) -> None:
-    
-    path = paths.get_afip_paths().base_xml / xml_name
+def save_xml(root, xml_name: str, cuit: str) -> None:
+
+    path = paths.get_afip_paths(cuit).base_xml / xml_name
     os.makedirs(os.path.dirname(path), exist_ok=True)
     tree = etree.ElementTree(root)
     tree.write(path, pretty_print=True, xml_declaration=True, encoding="UTF-8")
-    logger.info(f"{xml_name} successfully saved.")
+    logger.info(f"{xml_name} successfully saved for CUIT {cuit}.")
 
-def xml_exists(xml_name: str) -> bool:
-    xml_path = paths.get_afip_paths().base_xml / xml_name
+def xml_exists(xml_name: str, cuit: str) -> bool:
+    xml_path = paths.get_afip_paths(cuit).base_xml / xml_name
 
     if os.path.exists(xml_path):
         return True

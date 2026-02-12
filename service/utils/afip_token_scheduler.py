@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from pathlib import Path
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
@@ -12,26 +13,36 @@ from service.xml_management.xml_builder import is_expired, xml_exists
 scheduler = AsyncIOScheduler()
 
 async def run_job():
-    logger.info("Starting job: verifying token expiration")
+    logger.info("Starting job: verifying token expiration for all tenants")
 
-    if not xml_exists("loginTicketRequest.xml"):
-        token_generation_status = await generate_afip_access_token()
-    
-    if xml_exists("loginTicketResponse.xml"):
-        if is_expired("loginTicketResponse.xml", time_provider):
-            token_generation_status = await generate_afip_access_token()
-        logger.info("Token not expired.")
-        token_generation_status = {"status" : "success"}        
-        
-    if not xml_exists("loginTicketResponse.xml"):
-        token_generation_status = await generate_afip_access_token()      
-   
-    if token_generation_status["status"] == "success":
-        logger.info("Token is still valid. Job finished.")
-    else:
-        logger.info("Couldn't generate token by scheduler.")
+    certs_dir = Path("service/app_certs")
+    if not certs_dir.exists():
+        logger.info("No app_certs directory found, skipping scheduler run.")
+        return
 
-    return
+    for cuit_dir in certs_dir.iterdir():
+        if not cuit_dir.is_dir():
+            continue
+        cuit = cuit_dir.name
+        try:
+            if not xml_exists("loginTicketRequest.xml", cuit):
+                await generate_afip_access_token(cuit)
+                continue
+
+            if xml_exists("loginTicketResponse.xml", cuit):
+                if is_expired("loginTicketResponse.xml", time_provider, cuit):
+                    await generate_afip_access_token(cuit)
+                else:
+                    logger.info(f"Token not expired for CUIT {cuit}.")
+                continue
+
+            if not xml_exists("loginTicketResponse.xml", cuit):
+                await generate_afip_access_token(cuit)
+
+        except Exception as e:
+            logger.error(f"Error renewing token for CUIT {cuit}: {e}")
+
+    logger.info("Scheduler job finished for all tenants.")
 
 
 def start_scheduler():
@@ -47,7 +58,7 @@ def start_scheduler():
         coalesce=True,
         next_run_time=datetime.now(timezone.utc)
     )
-    scheduler.start()   
+    scheduler.start()
 
 def stop_scheduler():
     scheduler.shutdown(wait=False)

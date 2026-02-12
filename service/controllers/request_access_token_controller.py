@@ -9,13 +9,13 @@ from service.xml_management.xml_builder import (
     build_login_ticket_request, parse_and_save_loginticketresponse, save_xml)
 
 
-async def generate_afip_access_token() -> dict:
+async def generate_afip_access_token(cuit: str) -> dict:
 
-    logger.info("Generating a new access token...")
+    logger.info(f"Generating a new access token for CUIT {cuit}...")
 
     root = build_login_ticket_request(generate_ntp_timestamp)
-    save_xml(root, "loginTicketRequest.xml")
-    login_ticket_request_bytes, private_key_bytes, certificate_bytes = get_as_bytes()
+    save_xml(root, "loginTicketRequest.xml", cuit)
+    login_ticket_request_bytes, private_key_bytes, certificate_bytes = get_as_bytes(cuit)
     b64_cms = sign_login_ticket_request(login_ticket_request_bytes, private_key_bytes, certificate_bytes)
 
     afip_wsdl = get_wsaa_wsdl()
@@ -34,15 +34,15 @@ async def generate_afip_access_token() -> dict:
     login_ticket_response = await consult_afip_wsaa(login_cms, "loginCms")
 
     if login_ticket_response["status"] == "success":
-        parse_and_save_loginticketresponse(login_ticket_response["response"], save_xml)
-    
-        logger.info("Token generated successfully.")
+        parse_and_save_loginticketresponse(login_ticket_response["response"], save_xml, cuit)
+
+        logger.info(f"Token generated successfully for CUIT {cuit}.")
         return {
             "status" : "success"
             }
 
     else:
-        logger.error("Failed to generate access token.")
+        logger.error(f"Failed to generate access token for CUIT {cuit}.")
         return {
             "status" : "error generating access token."
             }
