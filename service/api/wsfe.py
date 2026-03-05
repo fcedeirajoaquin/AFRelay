@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 
 from service.api.models.fe_comp_consultar import FECompConsultar
 from service.api.models.fecae_solicitar import FECAESolicitar
@@ -21,13 +21,15 @@ from service.api.models.simple_models import (FECAEAConsultar,
                                               FEParamGetTiposOpcional,
                                               FEParamGetTiposPaises,
                                               FEParamGetTiposTributos)
+from service.controllers.request_access_token_controller import \
+    generate_afip_access_token
 from service.payload_builder.builder import add_auth_to_payload
 from service.soap_client.async_client import WSFEClientManager
 from service.soap_client.wsdl.wsdl_manager import get_wsfe_wsdl
 from service.soap_client.wsfe import consult_afip_wsfe
 from service.utils.jwt_validator import verify_token
 from service.utils.logger import logger
-from service.xml_management.xml_builder import extract_token_and_sign_from_xml
+from service.xml_management.xml_builder import extract_token_and_sign_from_xml, xml_exists
 
 router = APIRouter()
 afip_wsdl = get_wsfe_wsdl()
@@ -38,6 +40,38 @@ def _extract_cuit(data: dict) -> str:
     return str(data["Auth"]["Cuit"])
 
 
+async def _get_token_and_sign(cuit: str) -> tuple[str, str]:
+    """Extract token and sign, regenerating the token if needed."""
+    if not xml_exists("loginTicketResponse.xml", cuit):
+        logger.warning(f"Token file not found for CUIT {cuit}, attempting to regenerate...")
+        result = await generate_afip_access_token(cuit)
+        if result.get("status") != "success":
+            raise HTTPException(
+                status_code=503,
+                detail=f"AFIP token not available for CUIT {cuit}. Token generation failed.",
+            )
+
+    try:
+        return extract_token_and_sign_from_xml(cuit)
+    except Exception as e:
+        logger.error(f"Failed to extract token/sign for CUIT {cuit}: {e}")
+        logger.info(f"Attempting token regeneration for CUIT {cuit}...")
+        result = await generate_afip_access_token(cuit)
+        if result.get("status") != "success":
+            raise HTTPException(
+                status_code=503,
+                detail=f"AFIP token not available for CUIT {cuit}. Token regeneration failed.",
+            )
+        try:
+            return extract_token_and_sign_from_xml(cuit)
+        except Exception as e2:
+            logger.error(f"Token extraction still failed after regeneration for CUIT {cuit}: {e2}")
+            raise HTTPException(
+                status_code=503,
+                detail=f"AFIP token not available for CUIT {cuit}. Please re-upload certificates.",
+            )
+
+
 @router.post("/wsfe/FECAESolicitar")
 async def fecae_solicitar(data: FECAESolicitar, jwt = Depends(verify_token)) -> dict:
 
@@ -45,7 +79,7 @@ async def fecae_solicitar(data: FECAESolicitar, jwt = Depends(verify_token)) -> 
 
     data = data.model_dump(by_alias=True, exclude_none=True)
     cuit = _extract_cuit(data)
-    token, sign = extract_token_and_sign_from_xml(cuit)
+    token, sign = await _get_token_and_sign(cuit)
     data = add_auth_to_payload(data, token, sign)
 
     async def make_request():
@@ -62,7 +96,7 @@ async def fecomp_totx_request(data: FECompTotXRequest, jwt = Depends(verify_toke
 
     data = data.model_dump(by_alias=True, exclude_none=True)
     cuit = _extract_cuit(data)
-    token, sign = extract_token_and_sign_from_xml(cuit)
+    token, sign = await _get_token_and_sign(cuit)
     data = add_auth_to_payload(data, token, sign)
 
     async def make_request():
@@ -80,7 +114,7 @@ async def fe_comp_ultimo_autorizado(data: FECompUltimoAutorizado, jwt = Depends(
 
     data = data.model_dump(by_alias=True, exclude_none=True)
     cuit = _extract_cuit(data)
-    token, sign = extract_token_and_sign_from_xml(cuit)
+    token, sign = await _get_token_and_sign(cuit)
     data = add_auth_to_payload(data, token, sign)
 
     async def make_request():
@@ -98,7 +132,7 @@ async def fe_comp_consultar(comp_info: FECompConsultar, jwt = Depends(verify_tok
 
     data = comp_info.model_dump(by_alias=True, exclude_none=True)
     cuit = _extract_cuit(data)
-    token, sign = extract_token_and_sign_from_xml(cuit)
+    token, sign = await _get_token_and_sign(cuit)
     data = add_auth_to_payload(data, token, sign)
 
     async def make_request():
@@ -115,7 +149,7 @@ async def fecaea_reg_informativo(data: FECAEARegInformativo, jwt = Depends(verif
 
     data = data.model_dump(by_alias=True, exclude_none=True)
     cuit = _extract_cuit(data)
-    token, sign = extract_token_and_sign_from_xml(cuit)
+    token, sign = await _get_token_and_sign(cuit)
     data = add_auth_to_payload(data, token, sign)
 
     async def make_request():
@@ -132,7 +166,7 @@ async def fecaea_solicitar(data: FECAEASolicitar, jwt = Depends(verify_token)) -
 
     data = data.model_dump(by_alias=True, exclude_none=True)
     cuit = _extract_cuit(data)
-    token, sign = extract_token_and_sign_from_xml(cuit)
+    token, sign = await _get_token_and_sign(cuit)
     data = add_auth_to_payload(data, token, sign)
 
     async def make_request():
@@ -149,7 +183,7 @@ async def fecaea_sin_movimiento_consultar(data: FECAEASinMovimientoConsultar, jw
 
     data = data.model_dump(by_alias=True, exclude_none=True)
     cuit = _extract_cuit(data)
-    token, sign = extract_token_and_sign_from_xml(cuit)
+    token, sign = await _get_token_and_sign(cuit)
     data = add_auth_to_payload(data, token, sign)
 
     async def make_request():
@@ -166,7 +200,7 @@ async def fecaea_sin_movimiento_informar(data: FECAEASinMovimientoInformar, jwt 
 
     data = data.model_dump(by_alias=True, exclude_none=True)
     cuit = _extract_cuit(data)
-    token, sign = extract_token_and_sign_from_xml(cuit)
+    token, sign = await _get_token_and_sign(cuit)
     data = add_auth_to_payload(data, token, sign)
 
     async def make_request():
@@ -183,7 +217,7 @@ async def fecaea_consultar(data: FECAEAConsultar, jwt = Depends(verify_token)) -
 
     data = data.model_dump(by_alias=True, exclude_none=True)
     cuit = _extract_cuit(data)
-    token, sign = extract_token_and_sign_from_xml(cuit)
+    token, sign = await _get_token_and_sign(cuit)
     data = add_auth_to_payload(data, token, sign)
 
     async def make_request():
@@ -200,7 +234,7 @@ async def fe_param_get_cotization(data: FEParamGetCotizacion, jwt = Depends(veri
 
     data = data.model_dump(by_alias=True, exclude_none=True)
     cuit = _extract_cuit(data)
-    token, sign = extract_token_and_sign_from_xml(cuit)
+    token, sign = await _get_token_and_sign(cuit)
     data = add_auth_to_payload(data, token, sign)
 
     async def make_request():
@@ -217,7 +251,7 @@ async def fe_param_get_tipos_tributos(data: FEParamGetTiposTributos, jwt = Depen
 
     data = data.model_dump(by_alias=True, exclude_none=True)
     cuit = _extract_cuit(data)
-    token, sign = extract_token_and_sign_from_xml(cuit)
+    token, sign = await _get_token_and_sign(cuit)
     data = add_auth_to_payload(data, token, sign)
 
     async def make_request():
@@ -234,7 +268,7 @@ async def fe_param_get_tipos_monedas(data: FEParamGetTiposMonedas, jwt = Depends
 
     data = data.model_dump(by_alias=True, exclude_none=True)
     cuit = _extract_cuit(data)
-    token, sign = extract_token_and_sign_from_xml(cuit)
+    token, sign = await _get_token_and_sign(cuit)
     data = add_auth_to_payload(data, token, sign)
 
     async def make_request():
@@ -251,7 +285,7 @@ async def fe_param_get_tipos_iva(data: FEParamGetTiposIva, jwt = Depends(verify_
 
     data = data.model_dump(by_alias=True, exclude_none=True)
     cuit = _extract_cuit(data)
-    token, sign = extract_token_and_sign_from_xml(cuit)
+    token, sign = await _get_token_and_sign(cuit)
     data = add_auth_to_payload(data, token, sign)
 
     async def make_request():
@@ -268,7 +302,7 @@ async def fe_param_get_tipos_opcional(data: FEParamGetTiposOpcional, jwt = Depen
 
     data = data.model_dump(by_alias=True, exclude_none=True)
     cuit = _extract_cuit(data)
-    token, sign = extract_token_and_sign_from_xml(cuit)
+    token, sign = await _get_token_and_sign(cuit)
     data = add_auth_to_payload(data, token, sign)
 
     async def make_request():
@@ -285,7 +319,7 @@ async def fe_param_get_tipos_concepto(data: FEParamGetTiposConcepto, jwt = Depen
 
     data = data.model_dump(by_alias=True, exclude_none=True)
     cuit = _extract_cuit(data)
-    token, sign = extract_token_and_sign_from_xml(cuit)
+    token, sign = await _get_token_and_sign(cuit)
     data = add_auth_to_payload(data, token, sign)
 
     async def make_request():
@@ -302,7 +336,7 @@ async def fe_param_get_ptos_venta(data: FEParamGetPtosVenta, jwt = Depends(verif
 
     data = data.model_dump(by_alias=True, exclude_none=True)
     cuit = _extract_cuit(data)
-    token, sign = extract_token_and_sign_from_xml(cuit)
+    token, sign = await _get_token_and_sign(cuit)
     data = add_auth_to_payload(data, token, sign)
 
     async def make_request():
@@ -319,7 +353,7 @@ async def fe_param_get_tipos_cbte(data: FEParamGetTiposCbte, jwt = Depends(verif
 
     data = data.model_dump(by_alias=True, exclude_none=True)
     cuit = _extract_cuit(data)
-    token, sign = extract_token_and_sign_from_xml(cuit)
+    token, sign = await _get_token_and_sign(cuit)
     data = add_auth_to_payload(data, token, sign)
 
     async def make_request():
@@ -336,7 +370,7 @@ async def fe_param_get_condicion_iva_receptor(data: FEParamGetCondicionIvaRecept
 
     data = data.model_dump(by_alias=True, exclude_none=True)
     cuit = _extract_cuit(data)
-    token, sign = extract_token_and_sign_from_xml(cuit)
+    token, sign = await _get_token_and_sign(cuit)
     data = add_auth_to_payload(data, token, sign)
 
     async def make_request():
@@ -353,7 +387,7 @@ async def fe_param_get_tipos_doc(data: FEParamGetTiposDoc, jwt = Depends(verify_
 
     data = data.model_dump(by_alias=True, exclude_none=True)
     cuit = _extract_cuit(data)
-    token, sign = extract_token_and_sign_from_xml(cuit)
+    token, sign = await _get_token_and_sign(cuit)
     data = add_auth_to_payload(data, token, sign)
 
     async def make_request():
@@ -370,7 +404,7 @@ async def fe_param_get_tipos_paises(data: FEParamGetTiposPaises, jwt = Depends(v
 
     data = data.model_dump(by_alias=True, exclude_none=True)
     cuit = _extract_cuit(data)
-    token, sign = extract_token_and_sign_from_xml(cuit)
+    token, sign = await _get_token_and_sign(cuit)
     data = add_auth_to_payload(data, token, sign)
 
     async def make_request():
@@ -387,7 +421,7 @@ async def fe_param_get_actividades(data: FEParamGetActividades, jwt = Depends(ve
 
     data = data.model_dump(by_alias=True, exclude_none=True)
     cuit = _extract_cuit(data)
-    token, sign = extract_token_and_sign_from_xml(cuit)
+    token, sign = await _get_token_and_sign(cuit)
     data = add_auth_to_payload(data, token, sign)
 
     async def make_request():
